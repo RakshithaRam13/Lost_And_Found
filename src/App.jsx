@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import ItemDetail from "./pages/ItemDetail";
 
+import "./App.css";
 function App() {
   return (
     <BrowserRouter>

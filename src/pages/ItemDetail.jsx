@@ -1,88 +1,117 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { supabase } from "../supabaseClient";
+import { ArrowLeft, Phone } from "lucide-react";
+import { supabase } from "../lib/supabase";
 
-function ItemDetail() {
-  const { product_id } = useParams();
+export default function ItemDetail() {
+  const { id } = useParams();
+
   const [item, setItem] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    async function fetchItemDetails() {
-      try {
-        setLoading(true);
-        setError(null);
+    async function fetchItem() {
+      const { data, error } = await supabase
+        .from("Lost_And_Found")
+        .select("*")
+        .eq("Product_id", id)
+        .single();
 
-        const { data, error } = await supabase
-          .from("Lost_And_Found")
-          .select("*")
-          .eq("product_id", product_id)
-          .single();
-
-        if (error) throw error;
+      if (error) {
+        console.error("Error fetching item:", error);
+      } else {
         setItem(data);
-      } catch (err) {
-        console.error("Error fetching item details:", err.message);
-        setError(err.message);
-      } finally {
-        setLoading(false);
       }
+
+      setLoading(false);
     }
 
-    if (product_id) {
-      fetchItemDetails();
-    }
-  }, [product_id]);
+    fetchItem();
+  }, [id]);
 
   if (loading) {
-    return <div className="loading-state">Loading details...</div>;
+    return (
+      <main className="max-w-xl mx-auto text-center py-20 px-4 text-gray-500">
+        <p>Loading details...</p>
+      </main>
+    );
   }
 
-  if (error || !item) {
+  if (!item) {
     return (
-      <div className="error-state">
-        <h2>Item Not Found</h2>
-        <p>We couldn't find an item matching ID: {product_id}</p>
-        <Link to="/">Back to Home</Link>
-      </div>
+      <main className="max-w-xl mx-auto text-center py-20 px-4">
+        <h2 className="text-xl font-bold text-gray-900">Item Not Found</h2>
+
+        <p className="text-gray-500 text-sm mt-1">
+          No matching item was found.
+        </p>
+
+        <Link
+          to="/"
+          className="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Lost & Found
+        </Link>
+      </main>
     );
   }
 
   return (
-    <div className="item-detail-container">
-      <div className="item-card">
-        <div className="item-image-wrapper">
+    <main className="max-w-3xl mx-auto p-6">
+      {/* Back button */}
+      <Link
+        to="/"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 mb-6"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Back to Lost & Found
+      </Link>
+
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        {/* Image */}
+        <div className="w-full h-80 bg-gray-100">
           <img
-            src={item.img_url || "https://via.placeholder.com/300"}
+            src={item.img_url}
             alt={item.product_name}
-            className="item-image"
+            className="w-full h-full object-contain"
           />
         </div>
 
-        <div className="item-info">
-          <h2>{item.product_name}</h2>
-          <p className="item-id">
-            <strong>Item ID:</strong> {item.product_id}
+        {/* Details */}
+        <div className="p-6">
+          <p className="text-xs text-gray-400 mb-2">
+            Product ID: {item.product_id}
           </p>
 
-          <div className="contact-section">
-            <h3>Contact Information</h3>
-            <p>
-              <strong>Phone Number:</strong> {item.user_phno}
-            </p>
-            <a href={`tel:${item.user_phno}`} className="call-btn">
-              Call Owner
-            </a>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {item.product_name}
+          </h1>
+
+          <div className="mt-6 border-t border-gray-100 pt-5">
+            <div className="flex items-center gap-3">
+              <Phone className="w-5 h-5 text-blue-600" />
+
+              <div>
+                <p className="text-xs text-gray-500">Contact</p>
+
+                <p className="text-base font-semibold text-gray-900">
+                  {item.user_contact}
+                </p>
+              </div>
+            </div>
           </div>
 
-          <Link to="/" className="back-link">
-            ← Back to All Items
-          </Link>
+          {/* Contact button */}
+          <a
+            href={`tel:${item.user_contact}`}
+            className="mt-6 inline-flex items-center justify-center gap-2 w-full px-5 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            <Phone className="w-4 h-4" />
+            Contact Owner
+          </a>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
-
-export default ItemDetail;
